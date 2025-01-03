@@ -3,7 +3,7 @@
   "displayName": "deepseek-comment-translate",
   "description": "deepseek translate source for comment-translate",
   "version": "1.0.0",
-  "publisher": "satone7",
+  "publisher": "renping",
   "engines": {
     "vscode": "^1.63.0"
   },
@@ -18,13 +18,13 @@
     "翻译",
     "注释"
   ],
-  "homepage": "https://github.com/kitiho/vscode-comment-translate-deepseek#readme",
+  "homepage": "https://github.com/Satone7/vscode-comment-translate-deepseek#readme",
   "bugs": {
-    "url": "https://github.com/kitiho/vscode-comment-translate-deepseek/issues"
+    "url": "https://github.com/Satone7/vscode-comment-translate-deepseek/issues"
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/kitiho/vscode-comment-translate-deepseek.git"
+    "url": "https://github.com/Satone7/vscode-comment-translate-deepseek.git"
   },
   "activationEvents": [],
   "main": "./out/extension.js",
