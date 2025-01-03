@@ -3,7 +3,7 @@ import axios from 'axios';
 import { workspace } from 'vscode';
 import { ITranslate, ITranslateOptions } from 'comment-translate-manager';
 
-const PREFIXCONFIG = 'chatgptTranslate';
+const PREFIXCONFIG = 'deepseekTranslate';
 
 const langMaps: Map<string, string> = new Map([
     ['zh-CN', 'ZH'],
@@ -25,16 +25,16 @@ export function getConfig<T>(key: string): T | undefined {
 
 
 
-interface ChatGPTTranslateOption {
+interface DeepSeekTranslateOption {
     authKey?: string;
 }
 
-export class ChatGPTTranslate implements ITranslate {
+export class DeepSeekTranslate implements ITranslate {
     get maxLen(): number {
-        return 3000;
+        return 5000;
     }
 
-    private _defaultOption: ChatGPTTranslateOption;
+    private _defaultOption: DeepSeekTranslateOption;
     constructor() {
         this._defaultOption = this.createOption();
         workspace.onDidChangeConfiguration(async eventNames => {
@@ -45,7 +45,7 @@ export class ChatGPTTranslate implements ITranslate {
     }
 
     createOption() {
-        const defaultOption:ChatGPTTranslateOption = {
+        const defaultOption:DeepSeekTranslateOption = {
             authKey: getConfig<string>('authKey'),
         };
         return defaultOption;
@@ -53,7 +53,7 @@ export class ChatGPTTranslate implements ITranslate {
 
     async translate(content: string, { to = 'auto' }: ITranslateOptions) {
 
-        const url = `https://api.openai.com/v1/chat/completions`;
+        const url = `https://api.deepseek.com/chat/completions`;
 
         if(!this._defaultOption.authKey) {
             throw new Error('Please check the configuration of authKey!');
@@ -62,7 +62,7 @@ export class ChatGPTTranslate implements ITranslate {
         let userPrompt = `translate from en to zh-Hans`;
         userPrompt = `${userPrompt}:\n\n"${content}" =>`;
         const body = {
-            model: 'gpt-3.5-turbo',
+            model: 'deepseek-chat',
             temperature: 0,
             max_tokens: 1000,
             top_p: 1,
@@ -76,7 +76,7 @@ export class ChatGPTTranslate implements ITranslate {
                 { role: "user", content: userPrompt },
             ]
         };
-        
+
         const headers = {
             "Content-Type": "application/json",
             Authorization: `Bearer ${this._defaultOption.authKey}`,
@@ -98,8 +98,8 @@ export class ChatGPTTranslate implements ITranslate {
 
 
     link(content: string, { to = 'auto' }: ITranslateOptions) {
-        let str = `https://api.openai.com/v1/chat/completions/${convertLang(to)}/${encodeURIComponent(content)}`;
-        return `[ChatGPT](${str})`;
+        let str = `https://api.deepseek.com/chat/completions/${convertLang(to)}/${encodeURIComponent(content)}`;
+        return `[DeepSeek](${str})`;
     }
 
     isSupported(src: string) {

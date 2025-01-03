@@ -1,6 +1,6 @@
 # Change Log
 
-All notable changes to the "chatgpt-comment-translate" extension will be documented in this file.
+All notable changes to the "deepseek-comment-translate" extension will be documented in this file.
 
 Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
 
@@ -11,4 +11,5 @@ Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how 
 
 ## [1.0.0] 2023-3-11
 ### Add
- - Initialize the project, the basic capabilities are implemented
+ - Fork from `kitiho/vscode-comment-translate-chatgpt:master`
+ - Change the model from `chatgpt` to `deepseek`

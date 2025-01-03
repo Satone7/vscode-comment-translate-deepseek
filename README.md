@@ -1,4 +1,4 @@
-# chatgpt-translate README
+# deepseek-translate README
 
 The plugin provides a translation source for the ‘comment-translate’ plugin. Itself does not activate, it starts when enabled is selected.
 
@@ -14,7 +14,7 @@ Please install '[comment-translate](https://github.com/intellism/vscode-comment-
 ## Use
 1. After installation, call the "Change translation source" command of "Comment Translate"
     ![change](./image/change.png)
-2. Check "ChatGPT translate" to configure the plugin API Key
+2. Check "deepseek translate" to configure the plugin API Key
     ![select](./image/select.png)
 3. Directly use the "Comment Translate" interactive mode to translate the corresponding text
 
@@ -22,4 +22,4 @@ Please install '[comment-translate](https://github.com/intellism/vscode-comment-
 
 This extension contributes the following settings:
 
-* `chatgptTranslate.authKey`: set to `authKey` to request
+* `deepseekTranslate.authKey`: set to `authKey` to request

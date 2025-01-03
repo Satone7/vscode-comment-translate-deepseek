@@ -1,14 +1,14 @@
 import { ITranslateRegistry } from 'comment-translate-manager';
 import * as vscode from 'vscode';
-import { ChatGPTTranslate } from './chatgptTranslate';
+import { DeepSeekTranslate } from './deepseekTranslate';
 
 export function activate(context: vscode.ExtensionContext) {
-	
+
 
 	//Expose the plug-in
 	return {
         extendTranslate: function (registry: ITranslateRegistry) {
-            registry('chatgpt', ChatGPTTranslate);
+            registry('deepseek', DeepSeekTranslate);
         }
     };
 }

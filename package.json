@@ -1,9 +1,9 @@
 {
-  "name": "chatgpt-comment-translate",
-  "displayName": "chatgpt-comment-translate",
-  "description": "chatgpt translate source for comment-translate",
+  "name": "deepseek-comment-translate",
+  "displayName": "deepseek-comment-translate",
+  "description": "deepseek translate source for comment-translate",
   "version": "1.0.0",
-  "publisher": "kitiho",
+  "publisher": "satone",
   "engines": {
     "vscode": "^1.63.0"
   },
@@ -13,18 +13,18 @@
   "keywords": [
     "translateSource",
     "comment translate",
-    "chatgpt",
-    "chatgpt translate",
+    "deepseek",
+    "deepseek translate",
     "翻译",
     "注释"
   ],
-  "homepage": "https://github.com/kitiho/vscode-comment-translate-chatgpt#readme",
+  "homepage": "https://github.com/kitiho/vscode-comment-translate-deepseek#readme",
   "bugs": {
-    "url": "https://github.com/kitiho/vscode-comment-translate-chatgpt/issues"
+    "url": "https://github.com/kitiho/vscode-comment-translate-deepseek/issues"
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/kitiho/vscode-comment-translate-chatgpt.git"
+    "url": "https://github.com/kitiho/vscode-comment-translate-deepseek.git"
   },
   "activationEvents": [],
   "main": "./out/extension.js",
@@ -35,20 +35,20 @@
   "contributes": {
     "configuration": [
       {
-        "title": "Chatgpt translate Configuration",
+        "title": "deepseek translate Configuration",
         "type": "Object",
         "properties": {
-          "chatgptTranslate.authKey": {
+          "deepseekTranslate.authKey": {
             "type": "string",
-            "markdownDescription": "You need an authentication key to access to the API.[Accessing the API](https://openai.com)"
+            "markdownDescription": "You need an authentication key to access to the API.[Accessing the API](https://platform.deepseek.com/api_keys)"
           }
         }
       }
     ],
     "translates": [
       {
-        "translate": "chatgpt",
-        "title": "ChatGPT translate"
+        "translate": "deepseek",
+        "title": "deepseek translate"
       }
     ]
   },
