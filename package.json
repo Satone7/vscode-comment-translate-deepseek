@@ -2,7 +2,7 @@
   "name": "deepseek-comment-translate",
   "displayName": "deepseek-comment-translate",
   "description": "deepseek translate source for comment-translate",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "publisher": "renping",
   "engines": {
     "vscode": "^1.63.0"

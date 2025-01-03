@@ -9,7 +9,7 @@ Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how 
 - Initial release
 
 
-## [1.0.0] 2023-3-11
+## [1.0.2] 2025-1-2
 ### Add
  - Fork from `kitiho/vscode-comment-translate-chatgpt:master`
  - Change the model from `chatgpt` to `deepseek`

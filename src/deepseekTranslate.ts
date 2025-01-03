@@ -93,7 +93,7 @@ export class DeepSeekTranslate implements ITranslate {
         if (targetTxt.endsWith('"') || targetTxt.endsWith("」")) {
             targetTxt = targetTxt.slice(0, -1);
         }
-        return targetTxt.split("\n");
+        return targetTxt
     }
 
 
