@@ -1,6 +1,6 @@
 # deepseek-translate README
 
-The plugin provides a translation source for the ‘comment-translate’ plugin. Itself does not activate, it starts when enabled is selected.
+The plugin provides a translation source for the 'comment-translate' plugin. Itself does not activate, it starts when enabled is selected.
 
 ## Features
 
@@ -22,4 +22,45 @@ Please install '[comment-translate](https://github.com/intellism/vscode-comment-
 
 This extension contributes the following settings:
 
-* `deepseekTranslate.authKey`: set to `authKey` to request
+* `deepseekTranslate.authKey`: Authentication key for DeepSeek API (required for cloud API)
+* `deepseekTranslate.apiType`: API type selection `openai`(default)/`ollama` (for local deployment)
+* `deepseekTranslate.apiBaseUrl`: API base address (default: `https://api.deepseek.com`, Ollama users set to `http://localhost:11434`)
+* `deepseekTranslate.model`: Model name (default: `deepseek-chat`, Ollama users set local model name)
+
+## Configuration Examples
+
+### For Cloud API (Default)
+```json
+{
+    "deepseekTranslate.authKey": "your_api_key_here",
+    "deepseekTranslate.apiType": "openai",
+    "deepseekTranslate.model": "deepseek-chat"
+}
+```
+
+### For Local Ollama
+```json
+{
+    "deepseekTranslate.apiType": "ollama",
+    "deepseekTranslate.apiBaseUrl": "http://localhost:11434",
+    "deepseekTranslate.model": "your_local_model_name"
+}
+```
+
+### For Custom OpenAI-Compatible API
+```json
+{
+    "deepseekTranslate.authKey": "your_custom_api_key",
+    "deepseekTranslate.apiType": "openai",
+    "deepseekTranslate.apiBaseUrl": "https://your.custom.api/v1",
+    "deepseekTranslate.model": "your-custom-model"
+}
+```
+
+## Notice
+
+1. When using Ollama mode:
+   - Requires local deployment of [Ollama](https://ollama.ai/)
+   - No need to configure authKey
+   - Model name should match local installed models
+2. Cloud API users must configure valid authKey
