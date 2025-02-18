@@ -2,7 +2,7 @@
   "name": "deepseek-comment-translate",
   "displayName": "deepseek-comment-translate",
   "description": "deepseek translate source for comment-translate",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "publisher": "renping",
   "engines": {
     "vscode": "^1.63.0"
@@ -35,12 +35,12 @@
   "contributes": {
     "configuration": [
       {
-        "title": "deepseek translate Configuration",
+        "title": "DeepSeek翻译配置",
         "type": "Object",
         "properties": {
           "deepseekTranslate.authKey": {
             "type": "string",
-            "markdownDescription": "You need an authentication key to access to the API.[Accessing the API](https://platform.deepseek.com/api_keys)"
+            "markdownDescription": "API认证密钥[官方获取地址](https://platform.deepseek.com/api_keys)"
           },
           "deepseekTranslate.apiType": {
             "type": "string",
@@ -49,17 +49,17 @@
               "ollama"
             ],
             "default": "openai",
-            "description": "API类型选择，支持OpenAI兼容接口或本地Ollama服务"
+            "description": "API类型选择（openai=兼容Openai格式的云端API，ollama=本地部署）"
           },
           "deepseekTranslate.apiBaseUrl": {
             "type": "string",
             "default": "https://api.deepseek.com",
-            "description": "API基础地址，本地部署时可改为http://localhost:11434"
+            "description": "API服务地址（Ollama用户请设置为http://localhost:11434）"
           },
           "deepseekTranslate.model": {
             "type": "string",
             "default": "deepseek-chat",
-            "description": "使用的模型名称，Ollama部署时填写本地模型名称"
+            "description": "使用的AI模型名称（Ollama模式填写本地模型名）"
           }
         }
       }
