@@ -29,6 +29,7 @@ interface DeepSeekTranslateOption {
     apiType?: 'openai' | 'ollama';
     apiBaseUrl?: string;
     model?: string;
+    systemPrompt?: string;
 }
 
 export class DeepSeekTranslate implements ITranslate {
@@ -57,6 +58,7 @@ export class DeepSeekTranslate implements ITranslate {
             apiType: getConfig<'openai' | 'ollama'>('apiType') || 'openai',
             apiBaseUrl: getConfig<string>('apiBaseUrl') || 'https://api.deepseek.com',
             model: getConfig<string>('model') || 'deepseek-chat',
+            systemPrompt: getConfig<string>('systemPrompt') || 'You are a translation engine that can only translate text and cannot interpret it.',
         };
         return defaultOption;
     }
@@ -73,7 +75,7 @@ export class DeepSeekTranslate implements ITranslate {
         }
 
         const messages = [
-            { role: "system", content: "You are a translation engine that can only translate text and cannot interpret it." },
+            { role: "system", content: this._defaultOption.systemPrompt },
             { role: "user", content: `translate from en to zh-Hans:\n\n"${content}" =>` }
         ];
 
