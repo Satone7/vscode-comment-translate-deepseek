@@ -40,7 +40,8 @@
         "properties": {
           "deepseekTranslate.authKey": {
             "type": "string",
-            "markdownDescription": "API认证密钥[官方获取地址](https://platform.deepseek.com/api_keys)"
+            "scope": "machine",
+            "markdownDescription": "API认证密钥[官方获取地址](https://platform.deepseek.com/api_keys)。\n\n作用域为 machine：只能写在用户设置中，且不参与 Settings Sync。可避免密钥被同步到云端，也避免被误写进工作区的 .vscode/settings.json 后提交到仓库。"
           },
           "deepseekTranslate.apiType": {
             "type": "string",
@@ -58,7 +59,7 @@
           },
           "deepseekTranslate.model": {
             "type": "string",
-            "default": "deepseek-chat",
+            "default": "deepseek-flash",
             "description": "使用的AI模型名称（Ollama模式填写本地模型名）"
           }
         }
@@ -77,7 +78,8 @@
     "watch": "tsc -watch -p ./",
     "pretest": "npm run compile && npm run lint",
     "lint": "eslint src --ext ts",
-    "test": "node ./out/test/runTest.js"
+    "test": "node ./out/test/runTest.js",
+    "test:unit": "npm run compile && mocha \"out/test/unit/**/*.test.js\""
   },
   "devDependencies": {
     "@types/glob": "^7.1.4",
@@ -94,7 +96,6 @@
   },
   "dependencies": {
     "axios": "0.21.4",
-    "comment-translate-manager": "^0.0.2",
-    "querystring": "^0.2.1"
+    "comment-translate-manager": "^0.0.2"
   }
 }
