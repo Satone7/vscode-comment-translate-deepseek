@@ -1,23 +1,35 @@
 import axios from 'axios';
 import { workspace, window, Disposable } from 'vscode';
 import { ITranslate, ITranslateOptions } from 'comment-translate-manager';
+import {
+    ChatMessage,
+    buildMessages,
+    buildRetryInstruction,
+    countSourceLines,
+    matchesLineCount,
+    normalizeTranslation,
+} from './translatePrompt';
 
 const PREFIXCONFIG = 'deepseekTranslate';
+const DEFAULT_BASE_URL = 'https://api.deepseek.com';
 
-const langMaps: Map<string, string> = new Map([
-    ['zh-CN', 'ZH'],
-    ['zh-TW', 'ZH'],
-]);
-// 你好吗
+/**
+ * Must be one of the model names the API actually accepts.
+ * `deepseek-v4.1-flash` is rejected with HTTP 400 — the real name is `deepseek-flash`.
+ */
+export const DEFAULT_MODEL = 'deepseek-flash';
+
+/**
+ * `deepseek-flash` is a reasoning model: the reply budget covers the thinking
+ * tokens as well as the translation, so a low cap truncates long comments.
+ */
+const MAX_TOKENS = 8192;
+/** axios has no timeout by default, which would hang a hover forever. */
+const REQUEST_TIMEOUT_MS = 60000;
+/** Coalesce rapid settings edits into a single connection test. */
+const CONFIG_TEST_DEBOUNCE_MS = 800;
 
 let aiModel = 'DeepSeek';
-
-function convertLang(src: string) {
-    if (langMaps.has(src)) {
-        return langMaps.get(src);
-    }
-    return src.toLocaleUpperCase();
-}
 
 export function getConfig<T>(key: string): T | undefined {
     let configuration = workspace.getConfiguration(PREFIXCONFIG);
@@ -37,80 +49,101 @@ export class DeepSeekTranslate implements ITranslate {
     }
 
     private _defaultOption: DeepSeekTranslateOption;
+    private _configTestTimer: ReturnType<typeof setTimeout> | undefined;
+
     constructor() {
         this._defaultOption = this.createOption();
-        workspace.onDidChangeConfiguration(async eventNames => {
+        workspace.onDidChangeConfiguration(eventNames => {
             if (eventNames.affectsConfiguration(PREFIXCONFIG)) {
                 this._defaultOption = this.createOption();
-                try {
-                    await this.testConnection();
-                } catch (error) {
-                    window.showErrorMessage(`配置测试失败: ${error.message}`);
-                }
+                this.scheduleConnectionTest();
             }
         });
     }
 
-    createOption() {
-        const defaultOption:DeepSeekTranslateOption = {
+    createOption(): DeepSeekTranslateOption {
+        const defaultOption: DeepSeekTranslateOption = {
             authKey: getConfig<string>('authKey'),
             apiType: getConfig<'openai' | 'ollama'>('apiType') || 'openai',
-            apiBaseUrl: getConfig<string>('apiBaseUrl') || 'https://api.deepseek.com',
-            model: getConfig<string>('model') || 'deepseek-chat',
+            apiBaseUrl: getConfig<string>('apiBaseUrl') || DEFAULT_BASE_URL,
+            model: getConfig<string>('model') || DEFAULT_MODEL,
         };
         return defaultOption;
     }
 
-    async translate(content: string, { to = 'auto' }: ITranslateOptions) {
-        const baseUrl = this._defaultOption.apiBaseUrl;
-        const apiType = this._defaultOption.apiType;
-        const url = apiType === 'ollama'
-            ? `${baseUrl}/api/generate`
-            : `${baseUrl}/chat/completions`;
+    async translate(content: string, { from = 'auto', to = 'auto' }: ITranslateOptions): Promise<string> {
+        const option = this._defaultOption;
 
-        if(!this._defaultOption.authKey && apiType !== 'ollama') {
+        if (!content.trim()) {
+            return content;
+        }
+        if (!option.authKey && option.apiType !== 'ollama') {
             throw new Error('Please check the configuration of authKey!');
         }
 
-        const messages = [
-            { role: "system", content: "You are a translation engine that can only translate text and cannot interpret it." },
-            { role: "user", content: `translate from en to zh-Hans:\n\n"${content}" =>` }
-        ];
+        const expectedLines = countSourceLines(content);
+        const messages = buildMessages(content, from, to, expectedLines);
 
-        const body = apiType === 'ollama' ? {
-            model: this._defaultOption.model || 'deepseek-chat',
-            prompt: `${messages[0].content}\n${messages[1].content}`,
-            stream: false
-        } : {
-            model: this._defaultOption.model || 'deepseek-chat',
-            temperature: 0,
-            messages,
-            max_tokens: 1000,
-            top_p: 1,
-            frequency_penalty: 1,
-            presence_penalty: 1,
-        };
+        const first = await this.request(messages);
+        if (expectedLines <= 1 || matchesLineCount(first, expectedLines)) {
+            return normalizeTranslation(first, expectedLines);
+        }
 
-        const headers = apiType === 'ollama' ? {
-            "Content-Type": "application/json"
-        } : {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${this._defaultOption.authKey}`
+        // A merged or padded answer shifts every following comment line, so the
+        // host extension throws the whole block away. One stricter retry is
+        // cheaper than showing no translation at all.
+        const retry = await this.request([
+            ...messages,
+            { role: 'user', content: buildRetryInstruction(expectedLines) },
+        ]);
+        const best = matchesLineCount(retry, expectedLines) ? retry : first;
+        return normalizeTranslation(best, expectedLines);
+    }
+
+    private async request(messages: ChatMessage[]): Promise<string> {
+        const option = this._defaultOption;
+        const apiType = option.apiType === 'ollama' ? 'ollama' : 'openai';
+        const baseUrl = (option.apiBaseUrl || DEFAULT_BASE_URL).replace(/\/+$/, '');
+        const url = apiType === 'ollama'
+            ? `${baseUrl}/api/generate`
+            : `${baseUrl}/chat/completions`;
+        const model = option.model || DEFAULT_MODEL;
+
+        const headers: Record<string, string> = {
+            'Content-Type': 'application/json',
         };
+        if (apiType !== 'ollama') {
+            headers.Authorization = `Bearer ${option.authKey}`;
+        }
+
+        // Ollama speaks its own generate API, everything else is OpenAI compatible.
+        const body = apiType === 'ollama'
+            ? {
+                model,
+                prompt: messages.map(message => message.content).join('\n\n'),
+                stream: false,
+            }
+            : {
+                model,
+                // Deterministic output keeps the line structure stable.
+                temperature: 0,
+                messages,
+                max_tokens: MAX_TOKENS,
+                stream: false,
+            };
 
         try {
-            let res = await axios.post(url, body, { headers });
-            let targetTxt = apiType === 'ollama'
-                ? res.data.response.trim()
-                : res.data.choices[0].message.content.trim();
-            aiModel = res.data.model;
-            if (targetTxt.startsWith('"') || targetTxt.startsWith("「")) {
-                targetTxt = targetTxt.slice(1);
+            const res = await axios.post(url, body, { headers, timeout: REQUEST_TIMEOUT_MS });
+            aiModel = res.data?.model || aiModel;
+
+            const raw = apiType === 'ollama'
+                ? res.data?.response
+                : res.data?.choices?.[0]?.message?.content;
+
+            if (typeof raw !== 'string' || !raw.trim()) {
+                throw new Error('DeepSeek returned an empty translation.');
             }
-            if (targetTxt.endsWith('"') || targetTxt.endsWith("」")) {
-                targetTxt = targetTxt.slice(0, -1);
-            }
-            return targetTxt
+            return raw;
         } catch (error) {
             if (error.response?.status === 401) {
                 throw new Error('认证失败，请检查API Key是否正确');
@@ -120,16 +153,23 @@ export class DeepSeekTranslate implements ITranslate {
     }
 
     link(content: string, { to = 'auto' }: ITranslateOptions) {
-        const baseUrl = this._defaultOption.apiBaseUrl;
-        const apiType = this._defaultOption.apiType;
-        const url = apiType === 'ollama'
-            ? `${baseUrl}/api/generate`
-            : `${baseUrl}/chat/completions`;
-        return `[${aiModel?aiModel:'DeepSeek'}](${url})`;
+        if (content || to) { }
+        return `[${aiModel ? aiModel : 'DeepSeek'}](https://platform.deepseek.com)`;
     }
 
     isSupported(src: string) {
+        if (src) { }
         return true;
+    }
+
+    private scheduleConnectionTest() {
+        if (this._configTestTimer) {
+            clearTimeout(this._configTestTimer);
+        }
+        this._configTestTimer = setTimeout(() => {
+            this._configTestTimer = undefined;
+            void this.testConnection();
+        }, CONFIG_TEST_DEBOUNCE_MS);
     }
 
     private async testConnection() {
@@ -154,7 +194,7 @@ export class DeepSeekTranslate implements ITranslate {
 
         try {
             const startTime = Date.now();
-            const result = await this.translate('Hello', { to: 'zh-Hans' });
+            const result = await this.translate('Hello', { to: 'zh-CN' });
             const elapsedTime = Date.now() - startTime;
 
             // 清除定时器和提示
@@ -182,7 +222,7 @@ export class DeepSeekTranslate implements ITranslate {
             // 统一错误处理
             clearTimeout(timeoutTimer);
             let errorMessage = error.message;
-            if (error.message.includes('401')) {
+            if (error.message && error.message.includes('401')) {
                 errorMessage = '认证失败，请检查API Key是否正确';
             }
             window.showErrorMessage(`[DeepSeek] 配置测试失败: ${errorMessage}`);
@@ -192,8 +232,3 @@ export class DeepSeekTranslate implements ITranslate {
         }
     }
 }
-
-
-
-
-
